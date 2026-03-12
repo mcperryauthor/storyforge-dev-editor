@@ -24,32 +24,65 @@ export function exportToText(chapters, stats, manuscriptTitle = 'StoryForge-Repo
   lines.push('='.repeat(50))
   
   chapters.forEach(ch => {
-    lines.push(`\n${ch.title.toUpperCase()} (POV: ${ch.pov || ch.povScore || 'Unknown'})`)
+    lines.push(`\n${ch.title.toUpperCase()}`)
     lines.push('-'.repeat(30))
     const a = ch.analysis || {}
     lines.push(`Words: ${ch.wordCount?.toLocaleString() || 0}`)
-    lines.push(`Purpose: ${a.purpose?.primary || '—'}`)
-    lines.push(`Emotion: ${a.emotional?.label || '—'}`)
-    lines.push(`Pacing Rhythm: ${a.pacing?.rhythm || '—'}`)
     
+    // POV Voice
+    if (a.povVoice) {
+      lines.push(`POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch} - ${a.povVoice.notes})`)
+    } else {
+      lines.push(`POV: ${ch.pov || ch.povScore || 'Unknown'}`)
+    }
+    
+    // Purpose
+    lines.push(`Primary Purpose: ${a.purpose?.primary || '—'}`)
+    if (a.purpose?.scores) {
+      const ps = a.purpose.scores
+      lines.push(`  Plot: ${ps.plot} | Romance: ${ps.romance} | Worldbuilding: ${ps.worldbuilding} | Conspiracy: ${ps.conspiracy} | Char: ${ps.character}`)
+    }
+    
+    // Emotional Movement
+    lines.push(`Emotional Movement: ${a.emotional?.label || '—'} (Score: ${a.emotional?.score || 0})`)
+    
+    // Romance Tension
+    if (a.romance) {
+      lines.push(`Romance Tension: Phase [${a.romance.currentPhase || 'None'}] | Intensity: ${a.romance.intensity || 0}`)
+    }
+    
+    // Conspiracy Thread
+    if (a.conspiracy && a.conspiracy.activeVectors && a.conspiracy.activeVectors.length > 0) {
+      lines.push(`Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}`)
+    }
+    
+    // Pacing
+    if (a.pacing) {
+      lines.push(`Pacing Rhythm: ${a.pacing.rhythm || '—'}`)
+      lines.push(`  Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%`)
+    }
+    
+    // Flags: Prose Patterns, Out of Place Prose, AI Patterns
     const flags = []
-    if (a.prose) flags.push(...a.prose)
-    if (a.outOfPlace) flags.push(...a.outOfPlace)
-    if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, type: 'ai-pattern' })))
+    if (a.prose) flags.push(...a.prose.map(p => ({ ...p, _category: 'Prose Pattern' })))
+    if (a.outOfPlace) flags.push(...a.outOfPlace.map(p => ({ ...p, _category: 'Out of Place Prose' })))
+    if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, _category: 'AI Pattern' })))
+    if (a.pacing && a.pacing.flags) flags.push(...a.pacing.flags.map(p => ({ ...p, _category: 'Pacing Warning' })))
     
     if (flags.length === 0) {
-      lines.push('Flags: None\n')
+      lines.push('\nFlags: None')
     } else {
-      lines.push(`Flags (${flags.length}):`)
-      flags.forEach((f, i) => {
-        const sev = f.severity || (f.confidence === 'High' ? 'high' : 'medium')
-        const label = f.label || f.ruleId || f.reason || 'Flag'
-        lines.push(`  [${sev.toUpperCase()}] ${label}`)
-        lines.push(`    "${(f.passage || f.text || f.sentence || '').slice(0, 150)}"`)
-        if (f.explanation || f.reason) lines.push(`    → ${f.explanation || f.reason}`)
+      lines.push(`\nFlags (${flags.length}):`)
+      flags.forEach((f) => {
+        const sev = f.severity || f.type || (f.confidence === 'High' ? 'high' : 'medium')
+        const label = f.label || f.ruleId || f.reason || f.msg || 'Flag'
+        lines.push(`  [${f._category.toUpperCase()}] [${sev.toUpperCase()}] ${label}`)
+        const text = f.passage || f.text || f.sentence || f.phrase
+        if (text) lines.push(`    "${text.slice(0, 150)}"`)
+        if (f.explanation) lines.push(`    → ${f.explanation}`)
       })
-      lines.push('')
     }
+    lines.push('')
   })
   
   downloadBlob(lines.join('\n'), `${manuscriptTitle.replace(/\s+/g,'-').toLowerCase()}-report.txt`, 'text/plain')
@@ -93,7 +126,7 @@ export function exportToPDF(chapters, stats, manuscriptTitle = 'StoryForge-Repor
   rule()
   
   addText('GLOBAL STATISTICS', 11, true, [191, 160, 90])
-  addText(`Total Words: ${stats?.totalWords?.toLocaleString()}   Chapters: ${stats?.totalChapters}   Prose Flags: ${stats?.allIssues?.length}`)
+  addText(`Total Words: ${stats?.totalWords?.toLocaleString()}   Chapters: ${stats?.totalChapters}   Total Flags: ${stats?.allIssues?.length}`)
   addText(`AI Pattern Density: ${stats?.aiDensityLabel || 'Low'}`)
   y += 4
   rule()
@@ -104,28 +137,38 @@ export function exportToPDF(chapters, stats, manuscriptTitle = 'StoryForge-Repor
   
   chapters.forEach(ch => {
     rule()
-    addText(`${ch.title.toUpperCase()} (POV: ${ch.pov || ch.povScore || 'Unknown'})`, 12, true, [191, 160, 90])
+    addText(`${ch.title.toUpperCase()}`, 12, true, [191, 160, 90])
     const a = ch.analysis || {}
-    addText(`Words: ${ch.wordCount?.toLocaleString()}  |  Primary Purpose: ${a.purpose?.primary || 'None'}  |  Emotion: ${a.emotional?.label || 'None'}`, 9, false, [176, 168, 152])
-    addText(`Pacing Rhythm: ${a.pacing?.rhythm || 'Unknown'}`, 9, false, [176, 168, 152])
+    addText(`Words: ${ch.wordCount?.toLocaleString()}`, 9, false, [176, 168, 152])
+    
+    // Deep Metrics
+    if (a.povVoice) addText(`POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch})`, 9, false, [176, 168, 152])
+    const ps = a.purpose?.scores
+    if (ps) addText(`Primary Purpose: ${a.purpose?.primary || 'None'} (Plot: ${ps.plot} | Rom: ${ps.romance} | WB: ${ps.worldbuilding} | Con: ${ps.conspiracy})`, 9, false, [176, 168, 152])
+    addText(`Emotional Movement: ${a.emotional?.label || 'None'}`, 9, false, [176, 168, 152])
+    if (a.romance?.currentPhase) addText(`Romance Tension Phase: ${a.romance.currentPhase} (Intensity: ${a.romance.intensity})`, 9, false, [176, 168, 152])
+    if (a.conspiracy?.activeVectors?.length) addText(`Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}`, 9, false, [176, 168, 152])
+    if (a.pacing) addText(`Pacing Rhythm: ${a.pacing.rhythm} (Act: ${a.pacing.actionPct}% | Dial: ${a.pacing.dialogueRatio}% | Int: ${a.pacing.introspectPct}% | Exp: ${a.pacing.expositionPct}%)`, 9, false, [176, 168, 152])
     y += 2
     
     const flags = []
-    if (a.prose) flags.push(...a.prose)
-    if (a.outOfPlace) flags.push(...a.outOfPlace)
-    if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, type: 'ai-pattern' })))
+    if (a.prose) flags.push(...a.prose.map(p => ({ ...p, _category: 'Prose Pattern' })))
+    if (a.outOfPlace) flags.push(...a.outOfPlace.map(p => ({ ...p, _category: 'Out of Place Prose' })))
+    if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, _category: 'AI Pattern' })))
+    if (a.pacing && a.pacing.flags) flags.push(...a.pacing.flags.map(p => ({ ...p, _category: 'Pacing Warning' })))
     
     if (flags.length === 0) {
       addText('✓ No major structural or prose issues detected.', 9, false, [76, 168, 122])
     } else {
-      flags.forEach((f, i) => {
-        const sev = f.severity || (f.confidence === 'High' ? 'high' : 'medium')
+      flags.forEach((f) => {
+        const sev = f.severity || f.type || (f.confidence === 'High' ? 'high' : 'medium')
         const clr = sev === 'high' ? [194,79,79] : sev === 'medium' ? [201,135,76] : [157,111,168]
-        const label = f.label || f.ruleId || f.reason || 'Flag'
+        const label = f.label || f.ruleId || f.reason || f.msg || 'Flag'
         
-        addText(`[${sev.toUpperCase()}] ${label}`, 9, true, clr)
-        if (f.passage || f.text || f.sentence) addText(`"${(f.passage || f.text || f.sentence).slice(0, 120)}"`, 8.5, false, [176, 168, 152])
-        if (f.explanation || f.reason) addText((f.explanation || f.reason).slice(0, 180), 8, false, [110, 104, 96])
+        addText(`[${f._category}] ${label}`, 9, true, clr)
+        const text = f.passage || f.text || f.sentence || f.phrase
+        if (text) addText(`"${text.slice(0, 120)}"`, 8.5, false, [176, 168, 152])
+        if (f.explanation) addText(f.explanation.slice(0, 180), 8, false, [110, 104, 96])
         y += 2
       })
     }
@@ -158,7 +201,7 @@ export async function exportToDOCX(chapters, stats, manuscriptTitle = 'StoryForg
         new Paragraph({ text: "GLOBAL STATISTICS", heading: HeadingLevel.HEADING_3 }),
         new Paragraph({ text: `Total Words: ${stats?.totalWords?.toLocaleString()}` }),
         new Paragraph({ text: `Total Chapters: ${stats?.totalChapters}` }),
-        new Paragraph({ text: `Total Prose Flags: ${stats?.allIssues?.length}` }),
+        new Paragraph({ text: `Total Flags: ${stats?.allIssues?.length}` }),
         new Paragraph({ text: `AI Pattern Density: ${stats?.aiDensityLabel || 'Low'}` }),
         new Paragraph({ text: "" }),
         
@@ -169,32 +212,48 @@ export async function exportToDOCX(chapters, stats, manuscriptTitle = 'StoryForg
         ...chapters.flatMap(ch => {
           const a = ch.analysis || {}
           const children = [
-            new Paragraph({ text: `${ch.title.toUpperCase()} (POV: ${ch.pov || ch.povScore || 'Unknown'})`, heading: HeadingLevel.HEADING_2 }),
-            new Paragraph({ text: `Words: ${ch.wordCount?.toLocaleString()}  |  Purpose: ${a.purpose?.primary || 'None'}  |  Emotion: ${a.emotional?.label || 'None'}` }),
-            new Paragraph({ text: `Pacing Rhythm: ${a.pacing?.rhythm || 'Unknown'}` }),
-            new Paragraph({ text: "" }),
+            new Paragraph({ text: `${ch.title.toUpperCase()}`, heading: HeadingLevel.HEADING_2 }),
+            new Paragraph({ text: `Words: ${ch.wordCount?.toLocaleString()}` })
           ]
           
+          if (a.povVoice) children.push(new Paragraph({ text: `POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch})` }))
+          
+          const ps = a.purpose?.scores
+          if (ps) {
+              children.push(new Paragraph({ text: `Primary Purpose: ${a.purpose?.primary || 'None'} (Plot: ${ps.plot} | Romance: ${ps.romance} | Worldbuilding: ${ps.worldbuilding} | Conspiracy: ${ps.conspiracy})` }))
+          }
+          children.push(new Paragraph({ text: `Emotional Movement: ${a.emotional?.label || 'None'}` }))
+          
+          if (a.romance?.currentPhase) children.push(new Paragraph({ text: `Romance Tension: Phase [${a.romance.currentPhase}] | Intensity: ${a.romance.intensity}` }))
+          if (a.conspiracy?.activeVectors?.length) children.push(new Paragraph({ text: `Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}` }))
+          if (a.pacing) children.push(new Paragraph({ text: `Pacing Rhythm: ${a.pacing.rhythm} (Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%)` }))
+          
+          children.push(new Paragraph({ text: "" }))
+          
           const flags = []
-          if (a.prose) flags.push(...a.prose)
-          if (a.outOfPlace) flags.push(...a.outOfPlace)
-          if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, type: 'ai-pattern' })))
+          if (a.prose) flags.push(...a.prose.map(p => ({ ...p, _category: 'Prose Pattern' })))
+          if (a.outOfPlace) flags.push(...a.outOfPlace.map(p => ({ ...p, _category: 'Out of Place Prose' })))
+          if (a.aiPatterns) flags.push(...a.aiPatterns.map(p => ({ ...p, _category: 'AI Pattern' })))
+          if (a.pacing && a.pacing.flags) flags.push(...a.pacing.flags.map(p => ({ ...p, _category: 'Pacing Warning' })))
           
           if (flags.length === 0) {
             children.push(new Paragraph({ text: "✓ No major structural or prose issues detected." }))
             children.push(new Paragraph({ text: "" }))
           } else {
+            children.push(new Paragraph({ text: `Flags (${flags.length}):`, heading: HeadingLevel.HEADING_3 }))
             flags.forEach(f => {
-              const sev = f.severity || (f.confidence === 'High' ? 'high' : 'medium')
-              const label = f.label || f.ruleId || f.reason || 'Flag'
+              const sev = f.severity || f.type || (f.confidence === 'High' ? 'high' : 'medium')
+              const label = f.label || f.ruleId || f.reason || f.msg || 'Flag'
               children.push(new Paragraph({
                 children: [
-                  new TextRun({ text: `[${sev.toUpperCase()}] ${label}`, bold: true })
+                  new TextRun({ text: `[${f._category}] [${sev.toUpperCase()}] ${label}`, bold: true })
                 ]
               }))
-              if (f.passage || f.text || f.sentence) {
+              
+              const text = f.passage || f.text || f.sentence || f.phrase
+              if (text) {
                 children.push(new Paragraph({
-                  children: [new TextRun({ text: `"${(f.passage || f.text || f.sentence).slice(0, 200)}"`, italics: true })]
+                  children: [new TextRun({ text: `"${text.slice(0, 200)}"`, italics: true })]
                 }))
               }
               if (f.explanation || f.reason) {
