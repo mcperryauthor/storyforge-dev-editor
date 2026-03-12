@@ -4,6 +4,7 @@ import ManuscriptDashboard from './ManuscriptDashboard'
 import ChapterPanel from './ChapterPanel'
 import { extractTextFromFile } from './fileExtractor'
 import { parseManuscript, analyzeManuscript, buildManuscriptStats } from './devAnalyzer'
+import { exportToPDF, exportToDOCX, exportToText } from './exporter'
 import styles from './App.module.css'
 
 const AUTOSAVE_KEY = 'storyforge-project'
@@ -129,6 +130,7 @@ export default function App() {
         </div>
         <div className={styles.headerActions}>
           <span className={styles.autosave}>✓ Autosaved</span>
+          <ExportMenu chapters={chapters} stats={stats} manuscriptTitle={manuscriptTitle} />
           <button className={styles.ghostBtn} onClick={() => { setActiveView('dashboard'); setActiveChapterIndex(null) }}>
             Dashboard
           </button>
@@ -214,5 +216,24 @@ function ForgeIcon() {
         </linearGradient>
       </defs>
     </svg>
+  )
+}
+
+function ExportMenu({ chapters, stats, manuscriptTitle }) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className={styles.exportMenu} onMouseLeave={() => setIsOpen(false)}>
+      <button className={styles.ghostBtn} onClick={() => setIsOpen(!isOpen)}>
+        ↓ Export Report
+      </button>
+      {isOpen && (
+        <div className={styles.exportDropdown}>
+          <button onClick={() => { exportToPDF(chapters, stats, manuscriptTitle); setIsOpen(false) }}>Export as PDF</button>
+          <button onClick={() => { exportToDOCX(chapters, stats, manuscriptTitle); setIsOpen(false) }}>Export as DOCX</button>
+          <button onClick={() => { exportToText(chapters, stats, manuscriptTitle); setIsOpen(false) }}>Export as TXT</button>
+        </div>
+      )}
+    </div>
   )
 }
