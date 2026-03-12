@@ -41,9 +41,9 @@
 }
 .ghostBtn:hover { border-color: var(--gold-dim); color: var(--gold-light); background: var(--gold-glow); }
 
-.exportMenu { position: relative; display: inline-block; }
+.exportMenu { position: relative; display: inline-block; padding-bottom: 0.5rem; margin-bottom: -0.5rem; z-index: 200; }
 .exportDropdown {
-  position: absolute; top: 100%; right: 0; margin-top: 0.4rem;
+  position: absolute; top: 100%; right: 0; margin-top: 0;
   background: var(--bg-panel); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.35rem; display: flex; flex-direction: column;
   gap: 0.2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-width: 140px; z-index: 200;
