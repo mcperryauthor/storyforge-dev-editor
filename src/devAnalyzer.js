@@ -173,8 +173,10 @@ function getSentences(text) {
 }
 
 function countDialogueLines(text) {
-  // We strictly match double straight/curly quotes. Matching single quotes causes conflicts with apostrophes (e.g., "don't")
-  return (text.match(/["“][^"”]+["”]/g) || []).length
+  // Count all quotation marks (straight or curly) and divide by two.
+  // This is highly resilient to unclosed quotes or newlines within dialogue.
+  const quoteChars = text.match(/["“”]/g) || []
+  return Math.floor(quoteChars.length / 2)
 }
 
 function avgSentenceLen(sentences) {
