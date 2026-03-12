@@ -51,8 +51,11 @@ export function exportToText(chapters, stats, manuscriptTitle = 'StoryForge-Repo
     }
     
     // Conspiracy Thread
-    if (a.conspiracy && a.conspiracy.activeVectors && a.conspiracy.activeVectors.length > 0) {
-      lines.push(`Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}`)
+    if (a.conspiracy && a.conspiracy.vectors) {
+      const active = Object.entries(a.conspiracy.vectors).filter(v => v[1] > 0).map(v => v[0])
+      if (active.length > 0) {
+        lines.push(`Conspiracy Threads: ${active.join(', ')}`)
+      }
     }
     
     // Pacing
@@ -146,7 +149,10 @@ export function exportToPDF(chapters, stats, manuscriptTitle = 'StoryForge-Repor
     if (ps) addText(`Primary Purpose: ${a.purpose?.primary || 'None'} (Plot: ${ps.plot} | Rom: ${ps.romance} | WB: ${ps.worldbuilding} | Con: ${ps.conspiracy})`, 9, false, [176, 168, 152])
     addText(`Emotional Movement: ${a.emotional?.label || 'None'}`, 9, false, [176, 168, 152])
     if (a.romance?.currentPhase) addText(`Romance Tension Phase: ${a.romance.currentPhase} (Intensity: ${a.romance.intensity})`, 9, false, [176, 168, 152])
-    if (a.conspiracy?.activeVectors?.length) addText(`Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}`, 9, false, [176, 168, 152])
+    if (a.conspiracy?.vectors) {
+      const active = Object.entries(a.conspiracy.vectors).filter(v => v[1] > 0).map(v => v[0])
+      if (active.length) addText(`Conspiracy Threads: ${active.join(', ')}`, 9, false, [176, 168, 152])
+    }
     if (a.pacing) addText(`Pacing Rhythm: ${a.pacing.rhythm} (Act: ${a.pacing.actionPct}% | Dial: ${a.pacing.dialogueRatio}% | Int: ${a.pacing.introspectPct}% | Exp: ${a.pacing.expositionPct}%)`, 9, false, [176, 168, 152])
     y += 2
     
@@ -224,7 +230,12 @@ export async function exportToDOCX(chapters, stats, manuscriptTitle = 'StoryForg
           children.push(new Paragraph({ text: `Emotional Movement: ${a.emotional?.label || 'None'}` }))
           
           if (a.romance?.currentPhase) children.push(new Paragraph({ text: `Romance Tension: Phase [${a.romance.currentPhase}] | Intensity: ${a.romance.intensity}` }))
-          if (a.conspiracy?.activeVectors?.length) children.push(new Paragraph({ text: `Conspiracy Threads: ${a.conspiracy.activeVectors.map(v => v.vector).join(', ')}` }))
+          
+          if (a.conspiracy?.vectors) {
+            const active = Object.entries(a.conspiracy.vectors).filter(v => v[1] > 0).map(v => v[0])
+            if (active.length) children.push(new Paragraph({ text: `Conspiracy Threads: ${active.join(', ')}` }))
+          }
+          
           if (a.pacing) children.push(new Paragraph({ text: `Pacing Rhythm: ${a.pacing.rhythm} (Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%)` }))
           
           children.push(new Paragraph({ text: "" }))
