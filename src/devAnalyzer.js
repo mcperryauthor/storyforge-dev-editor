@@ -173,7 +173,7 @@ function getSentences(text) {
 }
 
 function countDialogueLines(text) {
-  return (text.match(/[""][^""]+[""]/g) || []).length
+  return (text.match(/["“][^"”]+["”]/g) || []).length
 }
 
 function avgSentenceLen(sentences) {
