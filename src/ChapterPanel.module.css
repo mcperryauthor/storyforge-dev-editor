@@ -53,6 +53,14 @@
   font-size: 0.82rem; color: var(--ivory-dim);
 }
 .primaryBadge strong { color: var(--gold-light); text-transform: capitalize; }
+
+.energyHIGH { background: rgba(194, 79, 79, 0.2); border-color: #c24f4f; color: #e07070; }
+.energyMEDIUM { background: rgba(201, 135, 76, 0.2); border-color: #c9874c; color: #dba068; }
+.energyLOW { background: rgba(79, 126, 194, 0.2); border-color: #4f7ec2; color: #7aaae0; }
+.energyHIGH strong { color: #fff; }
+.energyMEDIUM strong { color: #fff; }
+.energyLOW strong { color: #fff; }
+
 .secondaryBadge {
   font-size: 0.78rem; color: var(--ivory-muted);
   padding: 0 0.85rem; text-transform: capitalize;
@@ -137,6 +145,11 @@
 .flagReason { font-size:0.78rem; color:var(--ivory-muted); }
 
 .pacingGrid { display:flex; flex-direction:column; gap:0.55rem; }
+.pacingHeader { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+.pacingMetaRow { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:0.8rem; padding:0.6rem 0.85rem; background:var(--bg-elevated); border-radius:var(--radius); border:1px solid var(--border); justify-content:space-between; }
+.pacingMetaItem { font-size:0.76rem; color:var(--ivory-dim); }
+.pacingMetaItem strong { color:var(--ivory); }
+
 .pacingRow { display:flex; align-items:center; gap:0.7rem; }
 .pacingLabel { font-size:0.78rem; color:var(--ivory-dim); min-width:90px; }
 .pacingBarWrap { flex:1; background:var(--bg-base); border-radius:100px; height:5px; overflow:hidden; }

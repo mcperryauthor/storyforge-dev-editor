@@ -279,7 +279,28 @@ function PacingSection({ data }) {
   if (!data) return <Empty />
   return (
     <div className={styles.subSection}>
-      <div className={styles.primaryBadge}>Rhythm: <strong>{data.rhythm || 'Balanced'}</strong></div>
+      <div className={styles.pacingHeader}>
+         <div className={styles.primaryBadge}>Rhythm: <strong>{data.rhythm || 'Balanced'}</strong></div>
+         {data.energyScore && (
+           <div className={`${styles.primaryBadge} ${styles['energy' + data.energyScore]}`}>
+             Energy: <strong>{data.energyScore}</strong>
+           </div>
+         )}
+      </div>
+
+      <div className={styles.conspStats} style={{ marginTop: '0.8rem', marginBottom: '0.8rem', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        <BigStat value={data.conflictDensity || 'Low'} label="Conflict" />
+        <BigStat value={data.powerShifts || 0} label="Power Shifts" />
+        <BigStat value={data.stakesEvents || 0} label="Stakes Escalation" />
+        <BigStat value={data.infoDensity || 0} label="Info Density" />
+      </div>
+
+      <div className={styles.pacingMetaRow}>
+        <div className={styles.pacingMetaItem}><strong>Tension Curve:</strong> {data.tensionCurve || 'Flat'}</div>
+        <div className={styles.pacingMetaItem}><strong>Scene Hook:</strong> {data.sceneEntryStatus || 'Neutral'}</div>
+        <div className={styles.pacingMetaItem}><strong>Scene Ending:</strong> {data.sceneEndingStatus || 'Neutral'}</div>
+      </div>
+
       <div className={styles.pacingGrid}>
         <PacingBar label="Dialogue" value={data.dialogueRatio} color="#BFA05A" unit="%" />
         <PacingBar label="Action" value={data.actionPct} color="#c24f4f" unit="%" />

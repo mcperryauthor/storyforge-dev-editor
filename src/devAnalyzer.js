@@ -529,6 +529,11 @@ export function detectOutOfPlaceProse(chapter) {
 
 const ACTION_KW = ['fight', 'run', 'strike', 'attack', 'fly', 'leap', 'crash', 'burst', 'race', 'chase']
 const EXPOSITION_KW = ['explained', 'described', 'was known', 'in the days', 'historically', 'long ago', 'it had been']
+const CONFLICT_KW = ['argue', 'demand', 'snap', 'hiss', 'threaten', 'glare', 'insist', 'refuse', 'strike', 'clash']
+const NEGATION_KW = ['no', "don't", "can't", "won't", 'never', 'stop']
+const POWER_SHIFT_KW = ['yield', 'surrender', 'force', 'submit', 'command', 'obey', 'kneel', 'step', 'flinch', 'trap', 'corner', 'expose']
+const STAKES_KW = ['die', 'death', 'kill', 'danger', 'risk', 'lose', 'fail', 'blood', 'survive', 'ruin']
+const INFO_KW = ['court', 'academy', 'fae', 'magic', 'power', 'realm', 'history', 'lore', 'rule', 'law']
 
 export function analyzePacing(chapter) {
   const text = chapter.rawText.toLowerCase()
@@ -543,20 +548,54 @@ export function analyzePacing(chapter) {
   const introspectPct  = Math.min(100, Math.round((introspectScore / wc) * 1000))
   const expositionPct  = Math.min(100, Math.round((expositionScore / wc) * 400))
 
+  // Deep Pacing Engine Metrics
+  const conflictScore = CONFLICT_KW.reduce((s,k) => s + wordCount(text, k), 0) + NEGATION_KW.reduce((s,k) => s + wordCount(text, k), 0)
+  const conflictDensity = conflictScore > 8 ? 'High' : conflictScore > 3 ? 'Medium' : 'Low'
+  
+  const powerShifts = POWER_SHIFT_KW.reduce((s,k) => s + wordCount(text, k), 0)
+  const stakesEvents = STAKES_KW.reduce((s,k) => s + wordCount(text, k), 0)
+  const infoDensity = INFO_KW.reduce((s,k) => s + wordCount(text, k), 0)
+  
+  const firstFew = chapter.sentences.slice(0, 3).join(' ').toLowerCase()
+  const slowEntry = EXPOSITION_KW.some(kw => firstFew.includes(kw)) || INTROSPECT_KW.some(kw => firstFew.includes(kw))
+  const fastEntry = ACTION_KW.some(kw => firstFew.includes(kw)) || firstFew.includes('"') || firstFew.includes('“')
+
+  const lastFew = chapter.sentences.slice(-3).join(' ').toLowerCase()
+  const weakEnding = INTROSPECT_KW.some(kw => lastFew.includes(kw)) || EXPOSITION_KW.some(kw => lastFew.includes(kw))
+  
+  const tensionScore = actionScore + conflictScore + powerShifts + stakesEvents
+
   const flags = []
   if (expositionPct > 30) flags.push({ type: 'warning', msg: 'Heavy exposition — may slow pacing significantly.' })
   if (introspectPct > 35) flags.push({ type: 'note', msg: 'Long introspection block — ensure it builds to decision or action.' })
   if (dialogueRatio < 5 && actionScore < 5) flags.push({ type: 'note', msg: 'Low dialogue and action density — chapter may feel static.' })
   
+  // Advanced Pacing Flags
+  if (conflictDensity === 'Low') flags.push({ type: 'warning', msg: 'Low conflict density. Characters are thinking/talking but rarely opposing each other.' })
+  if (powerShifts === 0) flags.push({ type: 'warning', msg: 'No power shifts detected. Scene may stall if nothing changes between characters.' })
+  if (stakesEvents === 0) flags.push({ type: 'note', msg: 'No stakes escalation words detected.' })
+  if (infoDensity === 0) flags.push({ type: 'note', msg: 'No new worldbuilding/lore information detected.' })
+  if (slowEntry && !fastEntry) flags.push({ type: 'note', msg: 'Scene entry is slow. First sentences lean heavily on exposition or introspection rather than dialogue/action.' })
+  if (weakEnding) flags.push({ type: 'note', msg: 'Scene ending feels weak. It concludes on philosophical summary rather than an unresolved tension or reveal.' })
+
   // Calculate Pacing Rhythm
   let rhythm = 'Balanced'
-  if (actionPct > 15 && dialogueRatio < 20) rhythm = 'High-Octane Action'
+  if (conflictDensity === 'High' && powerShifts > 2) rhythm = 'High Tension / Confrontation'
+  else if (actionPct > 15 && dialogueRatio < 20) rhythm = 'High-Octane Action'
   else if (dialogueRatio > 40 && actionPct < 5) rhythm = 'Slow-Burn Dialogue'
   else if (introspectPct > 20 && actionPct < 5) rhythm = 'Introspective Lull'
   else if (expositionPct > 25) rhythm = 'Expository'
   else if (actionPct > 10 && dialogueRatio > 25) rhythm = 'Fast-Paced'
+  
+  const energyScore = (actionScore + (dialogueRatio/4) + conflictScore + powerShifts) > 15 ? 'HIGH' : (actionScore + (dialogueRatio/4) + conflictScore + powerShifts) > 6 ? 'MEDIUM' : 'LOW'
 
-  return { dialogueRatio, actionPct, introspectPct, expositionPct, rhythm, flags }
+  return { 
+    dialogueRatio, actionPct, introspectPct, expositionPct, 
+    conflictDensity, powerShifts, stakesEvents, infoDensity, tensionCurve: tensionScore > 15 ? 'Rising' : 'Flat',
+    sceneEntryStatus: slowEntry ? 'Slow' : fastEntry ? 'Fast' : 'Neutral',
+    sceneEndingStatus: weakEnding ? 'Weak' : 'Strong',
+    rhythm, energyScore, flags 
+  }
 }
 
 import { scanAIPatterns, scanManuscriptAIPatterns } from './aiPatternScanner'

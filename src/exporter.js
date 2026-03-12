@@ -62,6 +62,8 @@ export function exportToText(chapters, stats, manuscriptTitle = 'StoryForge-Repo
     if (a.pacing) {
       lines.push(`Pacing Rhythm: ${a.pacing.rhythm || '—'}`)
       lines.push(`  Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%`)
+      lines.push(`  Mechanics: Conflict [${a.pacing.conflictDensity || 'Low'}] | Power Shifts: ${a.pacing.powerShifts || 0} | Stakes: ${a.pacing.stakesEvents || 0} | Energy: ${a.pacing.energyScore || 'Low'}`)
+      lines.push(`  Structure: Hook [${a.pacing.sceneEntryStatus || 'Neutral'}] | Ending [${a.pacing.sceneEndingStatus || 'Neutral'}] | Tension: ${a.pacing.tensionCurve || 'Flat'}`)
     }
     
     // Flags: Prose Patterns, Out of Place Prose, AI Patterns
@@ -155,7 +157,11 @@ export function exportToPDF(chapters, stats, manuscriptTitle = 'StoryForge-Repor
          addText(`Conspiracy Thread: Phase [${a.conspiracy.phase || 'inactive'}] | Threads: ${active.length ? active.join(', ') : 'None'}`, 9, false, [176, 168, 152])
       }
     }
-    if (a.pacing) addText(`Pacing Rhythm: ${a.pacing.rhythm} (Act: ${a.pacing.actionPct}% | Dial: ${a.pacing.dialogueRatio}% | Int: ${a.pacing.introspectPct}% | Exp: ${a.pacing.expositionPct}%)`, 9, false, [176, 168, 152])
+    if (a.pacing) {
+      addText(`Pacing Rhythm: ${a.pacing.rhythm} (Act: ${a.pacing.actionPct}% | Dial: ${a.pacing.dialogueRatio}% | Int: ${a.pacing.introspectPct}% | Exp: ${a.pacing.expositionPct}%)`, 9, false, [176, 168, 152])
+      addText(`Pacing Mechanics: Conflict [${a.pacing.conflictDensity || 'Low'}] | Power Shifts: ${a.pacing.powerShifts || 0} | Stakes: ${a.pacing.stakesEvents || 0} | Energy: ${a.pacing.energyScore || 'Low'}`, 9, false, [176, 168, 152])
+      addText(`Pacing Structure: Hook [${a.pacing.sceneEntryStatus || 'Neutral'}] | Ending [${a.pacing.sceneEndingStatus || 'Neutral'}] | Tension: ${a.pacing.tensionCurve || 'Flat'}`, 9, false, [176, 168, 152])
+    }
     y += 2
     
     const flags = []
@@ -240,7 +246,11 @@ export async function exportToDOCX(chapters, stats, manuscriptTitle = 'StoryForg
             }
           }
           
-          if (a.pacing) children.push(new Paragraph({ text: `Pacing Rhythm: ${a.pacing.rhythm} (Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%)` }))
+          if (a.pacing) {
+             children.push(new Paragraph({ text: `Pacing Rhythm: ${a.pacing.rhythm} (Action: ${a.pacing.actionPct}% | Dialogue: ${a.pacing.dialogueRatio}% | Introsp: ${a.pacing.introspectPct}% | Expos: ${a.pacing.expositionPct}%)` }))
+             children.push(new Paragraph({ text: `Pacing Mechanics: Conflict [${a.pacing.conflictDensity || 'Low'}] | Power Shifts: ${a.pacing.powerShifts || 0} | Stakes: ${a.pacing.stakesEvents || 0} | Energy: ${a.pacing.energyScore || 'Low'}` }))
+             children.push(new Paragraph({ text: `Pacing Structure: Hook [${a.pacing.sceneEntryStatus || 'Neutral'}] | Ending [${a.pacing.sceneEndingStatus || 'Neutral'}] | Tension: ${a.pacing.tensionCurve || 'Flat'}` }))
+          }
           
           children.push(new Paragraph({ text: "" }))
           
