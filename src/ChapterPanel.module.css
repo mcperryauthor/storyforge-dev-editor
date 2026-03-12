@@ -83,13 +83,22 @@
   border-radius: var(--radius); padding: 0.85rem 1rem;
 }
 .romanceName { font-size:0.82rem; font-weight:600; margin-bottom:0.4rem; }
-.romanceStats { display:flex; gap:1rem; font-size:0.77rem; color:var(--ivory-muted); margin-bottom:0.5rem; }
+.romanceStats { display:flex; gap:1rem; font-size:0.77rem; color:var(--ivory-muted); margin-bottom:0.6rem; }
 .romanceStats strong { color:var(--ivory); }
 .tensionBar { background:var(--bg-base); border-radius:100px; height:4px; overflow:hidden; }
 .tensionFill { height:100%; border-radius:100px; transition:width 0.5s; }
 
+.phaseLabels { display:flex; justify-content:space-between; font-size:0.65rem; color:var(--ivory-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.25rem; }
+.phaseBarWrap { display:flex; gap:2px; height:5px; background:var(--bg-base); border-radius:100px; overflow:hidden; }
+.phaseFill { height:100%; transition:width 0.5s ease-out; }
+
+
 .conspiracySection { display:flex; flex-direction:column; gap:0.75rem; }
 .conspStats { display:grid; grid-template-columns:repeat(3,1fr); gap:0.65rem; }
+
+.vectorStats { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:0.65rem 0.85rem; display:flex; flex-direction:column; gap:0.35rem; margin-top:0.2rem; }
+.vectorRow { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--ivory-dim); }
+.vectorRow strong { color:var(--ivory); }
 
 .voiceStats { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:0.65rem; }
 .contamList { background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:0.75rem 1rem; }

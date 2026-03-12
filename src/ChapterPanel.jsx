@@ -140,10 +140,16 @@ function RomanceSection({ data }) {
             <div className={styles.romanceStats}>
               <span>{r.mentions} mentions</span>
               <span>{r.kwScore} keyword hits</span>
-              <strong>Tension: {r.tension.toFixed(1)}</strong>
+              <strong>Tension: {r.tension?.toFixed(1) || '0.0'}</strong>
             </div>
-            <div className={styles.tensionBar}>
-              <div className={styles.tensionFill} style={{ width: `${Math.min(100, r.tension * 10)}%`, background: COLORS[name] }} />
+            
+            <div className={styles.phaseLabels}>
+              <span>Tension</span><span>Vuln</span><span>Claim</span>
+            </div>
+            <div className={styles.phaseBarWrap}>
+              <div className={styles.phaseFill} style={{ width: `${Math.min(100, (r.phases?.tension || 0) * 15)}%`, background: '#BFA05A' }} />
+              <div className={styles.phaseFill} style={{ width: `${Math.min(100, (r.phases?.vulnerability || 0) * 15)}%`, background: '#9D6FA8' }} />
+              <div className={styles.phaseFill} style={{ width: `${Math.min(100, (r.phases?.claiming || 0) * 15)}%`, background: '#c24f4f' }} />
             </div>
           </div>
         )
@@ -163,16 +169,23 @@ function ConspiracySection({ data }) {
         Phase: <strong style={{ color: phaseColors[data.phase] }}>{data.phase}</strong>
       </div>
       <div className={styles.conspStats}>
-        <BigStat value={data.clueDensity} label="Clue Keywords" />
+        <BigStat value={data.clueDensity} label="Total Clue KWs" />
         <BigStat value={data.suspicionDensity} label="Suspicion Markers" />
         <BigStat value={data.revealDensity} label="Reveal Language" />
       </div>
+      {data.vectors && (
+        <div className={styles.vectorStats}>
+          <div className={styles.vectorRow}><span>Institutional:</span> <strong>{data.vectors.institutional}</strong></div>
+          <div className={styles.vectorRow}><span>Magical/Energy:</span> <strong>{data.vectors.magical}</strong></div>
+          <div className={styles.vectorRow}><span>Historical:</span> <strong>{data.vectors.historical}</strong></div>
+        </div>
+      )}
       <Flags flags={data.flags} />
     </div>
   )
 }
 
-function POVVoiceSection({ data, pov }) {
+function POVVoiceSection({ data }) {
   if (!data) return <div className={styles.empty}>POV voice analysis requires a detected POV character.</div>
   return (
     <div className={styles.subSection}>
@@ -236,6 +249,7 @@ function PacingSection({ data }) {
   if (!data) return <Empty />
   return (
     <div className={styles.subSection}>
+      <div className={styles.primaryBadge}>Rhythm: <strong>{data.rhythm || 'Balanced'}</strong></div>
       <div className={styles.pacingGrid}>
         <PacingBar label="Dialogue" value={data.dialogueRatio} color="#BFA05A" unit="%" />
         <PacingBar label="Action" value={data.actionPct} color="#c24f4f" unit="%" />

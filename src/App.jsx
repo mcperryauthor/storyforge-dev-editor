@@ -33,7 +33,9 @@ export default function App() {
           setScreen('analysis')
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error('Failed to load project:', e)
+    }
   }, [])
 
   // Autosave

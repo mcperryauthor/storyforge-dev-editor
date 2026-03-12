@@ -15,34 +15,48 @@ export const POV_VOICE_PROFILES = {
     traits: ['restrained', 'noble', 'ideological', 'lyrical'],
     keywords: ['dignity', 'duty', 'honor', 'light', 'bloom', 'fracture', 'silence', 'ache'],
     sentenceLengthBias: 'varied', // long lyrical sentences + short fragments
+    structuralBias: { introspection: 'high', action: 'low', dialogue: 'medium' },
   },
   Killian: {
     traits: ['aggressive', 'visceral', 'physical', 'survival'],
     keywords: ['blood', 'bone', 'fight', 'strike', 'burn', 'survive', 'break', 'fist', 'snarl'],
     sentenceLengthBias: 'short',
+    structuralBias: { introspection: 'low', action: 'high', dialogue: 'low' },
   },
   Lysander: {
     traits: ['political', 'manipulative', 'elegant', 'calculated'],
     keywords: ['game', 'move', 'court', 'power', 'mask', 'choose', 'conceal', 'truth', 'advantage'],
     sentenceLengthBias: 'long',
+    structuralBias: { introspection: 'medium', action: 'low', dialogue: 'high' },
   },
   Ronin: {
     traits: ['quiet', 'observational', 'tactical', 'shadow'],
     keywords: ['shadow', 'dark', 'watch', 'still', 'wait', 'silent', 'edge', 'forest', 'observe'],
     sentenceLengthBias: 'short',
+    structuralBias: { introspection: 'medium', action: 'medium', dialogue: 'low' },
   },
 }
 
-export const CONSPIRACY_KEYWORDS = [
-  'harvest', 'energy', 'drain', 'trial', 'rigged', 'corrupt', 'Life Well',
-  'conspiracy', 'academy', 'Faehelm', 'sacrifice', 'institution', 'dean',
-  'headmaster', 'board', 'hidden', 'secret', 'cover', 'trap',
-]
+export const CONSPIRACY_VECTORS = {
+  institutional: ['dean', 'board', 'rules', 'records', 'trial', 'rigged', 'corrupt', 'academy', 'institution'],
+  magical: ['harvest', 'energy', 'drain', 'Life Well', 'core', 'siphon', 'sacrifice', 'power'],
+  historical: ['history', 'prior', 'ancient', 'treaty', 'pact', 'hidden', 'secret', 'cover', 'forgotten'],
+}
 
+// Flat list for general thresholding
+export const CONSPIRACY_KEYWORDS = Object.values(CONSPIRACY_VECTORS).flat()
+
+export const ROMANCE_PHASES = {
+  tension: ['glance', 'pull', 'stare', 'breath', 'tension', 'close', 'proximity', 'look', 'watch'],
+  vulnerability: ['soft', 'truth', 'admit', 'gentle', 'touch', 'confess', 'yield', 'trust', 'open'],
+  claiming: ['claim', 'mine', 'burn', 'ruin', 'crash', 'kiss', 'desire', 'need', 'take', 'possess', 'territorial'],
+}
+
+// Keep original flat keywords for fallback/general romance purpose scoring
 export const ROMANCE_KEYWORDS = {
-  Killian: ['tension', 'aggressive', 'claim', 'possessive', 'territorial', 'jealous', 'pull', 'burn'],
-  Lysander: ['elegant', 'manipulate', 'game', 'dangerous', 'power', 'negotiate', 'tempt', 'cold'],
-  Ronin: ['quiet', 'protect', 'gentle', 'watch', 'shadow', 'steady', 'patient', 'anchor'],
+  Killian: [...ROMANCE_PHASES.tension, ...ROMANCE_PHASES.claiming, 'aggressive'],
+  Lysander: [...ROMANCE_PHASES.tension, 'manipulate', 'game', 'dangerous'],
+  Ronin: [...ROMANCE_PHASES.vulnerability, 'protect', 'shadow', 'steady'],
 }
 
 const MICRO_PHRASES = [
@@ -255,16 +269,35 @@ export function analyzeEmotionalMovement(chapter) {
 export function analyzeRomanceTension(chapter) {
   const text = chapter.rawText.toLowerCase()
   const results = {}
-  let totalFlags = []
 
   LOVE_INTERESTS.forEach(name => {
     const nameLower = name.toLowerCase()
     const mentions = wordCount(text, nameLower)
-    const kw = ROMANCE_KEYWORDS[name] || []
-    const kwScore = kw.reduce((s, k) => s + wordCount(text, k), 0)
-    const tension = Math.round((mentions * 0.4 + kwScore * 0.6) * 10) / 10
-
-    results[name] = { mentions, kwScore, tension }
+    
+    // Calculate keyword scores for each phase
+    const pTension = ROMANCE_PHASES.tension.reduce((s, k) => s + wordCount(text, k), 0)
+    const pVuln = ROMANCE_PHASES.vulnerability.reduce((s, k) => s + wordCount(text, k), 0)
+    const pClaim = ROMANCE_PHASES.claiming.reduce((s, k) => s + wordCount(text, k), 0)
+    
+    // Only count character-specific keywords if they appear IN THE SAME CHAPTER as the character mention
+    // (This is a simplified programmatic proxy for "are they in scene together")
+    if (mentions > 0) {
+       // Character-specific custom keywords
+       const kw = ROMANCE_KEYWORDS[name] || []
+       const kwScore = kw.reduce((s, k) => s + wordCount(text, k), 0)
+       
+       const totalKw = pTension + pVuln + pClaim + kwScore
+       const tensionScore = Math.round((mentions * 0.4 + totalKw * 0.6) * 10) / 10
+       
+       results[name] = { 
+         mentions, 
+         kwScore: totalKw, 
+         phases: { tension: pTension, vulnerability: pVuln, claiming: pClaim },
+         tension: tensionScore 
+       }
+    } else {
+       results[name] = { mentions: 0, kwScore: 0, phases: { tension: 0, vulnerability: 0, claiming: 0 }, tension: 0 }
+    }
   })
 
   // Check for dynamics
@@ -276,9 +309,13 @@ export function analyzeRomanceTension(chapter) {
   }
   if (dominant && dominant[1].tension > 8) {
     flags.push({ type: 'info', msg: `Strong ${dominant[0]} tension — good momentum.` })
+    
+    if (dominant[1].phases.claiming > 2) {
+      flags.push({ type: 'warning', msg: `High Claiming phase keywords for ${dominant[0]}. Escalation is peaking.` })
+    }
   }
 
-  return { byCharacter: results, dominant: dominant?.[0], flags }
+  return { byCharacter: results, dominant: dominant && dominant[1].tension > 0 ? dominant[0] : null, flags }
 }
 
 // ─── MODULE: CONSPIRACY TRACKING ──────────────────────────────────────────────
@@ -289,7 +326,14 @@ const SUSPICION_KW = ['suspicious', 'wrong', 'off', 'strange', 'doubt', 'questio
 
 export function analyzeConspiracyArc(chapter) {
   const text = chapter.rawText.toLowerCase()
-  const clueDensity = CONSPIRACY_KEYWORDS.reduce((s,k) => s + wordCount(text, k.toLowerCase()), 0)
+  
+  const vectors = {
+    institutional: CONSPIRACY_VECTORS.institutional.reduce((s,k) => s + wordCount(text, k.toLowerCase()), 0),
+    magical: CONSPIRACY_VECTORS.magical.reduce((s,k) => s + wordCount(text, k.toLowerCase()), 0),
+    historical: CONSPIRACY_VECTORS.historical.reduce((s,k) => s + wordCount(text, k.toLowerCase()), 0),
+  }
+  
+  const clueDensity = Object.values(vectors).reduce((a, b) => a + b, 0)
   const revealDensity = REVEAL_KW.reduce((s,k) => s + wordCount(text, k), 0)
   const suspicionDensity = SUSPICION_KW.reduce((s,k) => s + wordCount(text, k), 0)
 
@@ -303,10 +347,13 @@ export function analyzeConspiracyArc(chapter) {
   if (clueDensity === 0 && chapter.index > 3) {
     flags.push({ type: 'note', msg: 'No conspiracy thread in this chapter — consider weaving in a minor clue.' })
   }
+  
+  if (vectors.institutional > 5) flags.push({ type: 'info', msg: 'Heavy Institutional plotting detected.' })
+  if (vectors.magical > 5) flags.push({ type: 'info', msg: 'Heavy Magical/Energy lore detected.' })
 
   const phase = revealDensity > 2 ? 'reveal' : suspicionDensity > 3 ? 'suspicion' : clueDensity > 0 ? 'seeding' : 'inactive'
 
-  return { clueDensity, revealDensity, suspicionDensity, phase, flags }
+  return { clueDensity, vectors, revealDensity, suspicionDensity, phase, flags }
 }
 
 // ─── MODULE: POV VOICE CONSISTENCY ──────────────────────────────────────────
@@ -333,6 +380,23 @@ export function analyzePOVVoice(chapter, allChapters) {
       type: 'warning',
       msg: `${pov}\u2019s sentence rhythm deviates from their baseline (avg ${avgLen.toFixed(1)} vs typical ${meanLen.toFixed(1)} words). Voice may be drifting.`,
     })
+  }
+  
+  // Structural Bias Check
+  if (chapter.analysis && chapter.analysis.pacing && profile.structuralBias) {
+    const p = chapter.analysis.pacing
+    const { introspection, action, dialogue } = profile.structuralBias
+    
+    // Simple structural contrast warnings
+    if (introspection === 'low' && p.introspectPct > 25) {
+      flags.push({ type: 'warning', msg: `High introspection for ${pov}, who usually skews action/external.` })
+    }
+    if (action === 'high' && p.actionPct < 5 && p.dialogueRatio < 10) {
+      flags.push({ type: 'warning', msg: `${pov} chapter feels too static. Missing physical/action presence.` })
+    }
+    if (dialogue === 'high' && p.dialogueRatio < 15) {
+      flags.push({ type: 'note', msg: `${pov} is highly verbal, but this chapter has very little dialogue.` })
+    }
   }
 
   // Check for cross-voice keyword contamination
@@ -479,26 +543,42 @@ export function analyzePacing(chapter) {
   if (expositionPct > 30) flags.push({ type: 'warning', msg: 'Heavy exposition — may slow pacing significantly.' })
   if (introspectPct > 35) flags.push({ type: 'note', msg: 'Long introspection block — ensure it builds to decision or action.' })
   if (dialogueRatio < 5 && actionScore < 5) flags.push({ type: 'note', msg: 'Low dialogue and action density — chapter may feel static.' })
+  
+  // Calculate Pacing Rhythm
+  let rhythm = 'Balanced'
+  if (actionPct > 15 && dialogueRatio < 20) rhythm = 'High-Octane Action'
+  else if (dialogueRatio > 40 && actionPct < 5) rhythm = 'Slow-Burn Dialogue'
+  else if (introspectPct > 20 && actionPct < 5) rhythm = 'Introspective Lull'
+  else if (expositionPct > 25) rhythm = 'Expository'
+  else if (actionPct > 10 && dialogueRatio > 25) rhythm = 'Fast-Paced'
 
-  return { dialogueRatio, actionPct, introspectPct, expositionPct, flags }
+  return { dialogueRatio, actionPct, introspectPct, expositionPct, rhythm, flags }
 }
 
 // ─── MASTER ANALYSIS ──────────────────────────────────────────────────────────
 
 export function analyzeManuscript(chapters, settings = {}) {
-  return chapters.map(chapter => ({
+  // First pass: Calculate independent metrics
+  let analyzed = chapters.map(chapter => ({
     ...chapter,
     analysis: {
       purpose:    classifyChapterPurpose(chapter),
       emotional:  analyzeEmotionalMovement(chapter),
       romance:    analyzeRomanceTension(chapter),
       conspiracy: analyzeConspiracyArc(chapter),
-      povVoice:   analyzePOVVoice(chapter, chapters),
       prose:      scanProsePatterns(chapter, settings.sensitivity ?? 3),
       outOfPlace: detectOutOfPlaceProse(chapter),
       pacing:     analyzePacing(chapter),
     },
   }))
+  
+  // Second pass: Dependent metrics (POVVoice needs Pacing first for structural checking)
+  analyzed = analyzed.map(chapter => {
+    chapter.analysis.povVoice = analyzePOVVoice(chapter, analyzed)
+    return chapter
+  })
+  
+  return analyzed
 }
 
 // ─── MANUSCRIPT STATS ─────────────────────────────────────────────────────────
