@@ -14,7 +14,7 @@ export default function ManuscriptDashboard({ chapters, stats, onChapterSelect }
 
   const pacingData = chapters.map(c => ({
     name: c.title.slice(0,12) + (c.title.length > 12 ? '\u2026' : ''),
-    Dialogue: c.analysis?.pacing?.dialogueRatio || 0,
+    Dialogue: Math.round((c.analysis?.pacing?.dialogueRatio || 0) / 4), // Scaled down to be visible alongside action/introspection which are usually < 15
     Action:   c.analysis?.pacing?.actionPct || 0,
     Introspection: c.analysis?.pacing?.introspectPct || 0,
     Exposition: c.analysis?.pacing?.expositionPct || 0,

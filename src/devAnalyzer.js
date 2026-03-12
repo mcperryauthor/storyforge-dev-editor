@@ -173,10 +173,18 @@ function getSentences(text) {
 }
 
 function countDialogueLines(text) {
-  // Count all quotation marks (straight or curly) and divide by two.
-  // This is highly resilient to unclosed quotes or newlines within dialogue.
-  const quoteChars = text.match(/["“”]/g) || []
-  return Math.floor(quoteChars.length / 2)
+  // Split the text into paragraphs/lines
+  const paragraphs = text.split(/\n/)
+  let dialogueCount = 0
+  
+  // If a paragraph contains ANY quote character, we count it as a dialogue beat.
+  // This is the most resilient way to handle docx extracted text which often
+  // contains unclosed quotes, typographic smart quotes, and multi-paragraph speeches.
+  paragraphs.forEach(p => {
+    if (/["“”]/.test(p)) dialogueCount++
+  })
+  
+  return dialogueCount
 }
 
 function avgSentenceLen(sentences) {
