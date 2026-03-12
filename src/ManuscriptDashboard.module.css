@@ -1,0 +1,74 @@
+.dashboard { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.statRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; }
+
+.statCard {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.1rem 1.3rem;
+  position: relative; overflow: hidden; transition: var(--transition);
+}
+.statCard::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:var(--c); }
+.statCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.statValue { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:600; line-height:1; margin-bottom:0.25rem; }
+.statLabel { font-size:0.72rem; color:var(--ivory-muted); text-transform:uppercase; letter-spacing:0.06em; }
+
+.gridRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.2rem 1.4rem;
+}
+
+.cardTitle {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--ivory-muted); margin-bottom: 0.9rem;
+}
+.cardNote { font-size: 0.72rem; color: var(--ivory-muted); margin-top: 0.6rem; }
+
+.povBars, .romanceBars { display: flex; flex-direction: column; gap: 0.55rem; }
+.povRow { display: flex; align-items: center; gap: 0.65rem; }
+.povName { font-size: 0.8rem; font-weight: 500; min-width: 70px; }
+.povBarWrap { flex: 1; background: var(--bg-base); border-radius: 100px; height: 5px; overflow: hidden; }
+.povBarFill { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+.povCount { font-size: 0.75rem; color: var(--ivory-muted); min-width: 30px; text-align: right; }
+
+.phraseRow { display: flex; justify-content: space-between; align-items: center; padding: 0.28rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+.phraseRow:last-child { border-bottom: none; }
+.phraseText { font-family: var(--font-mono); font-size: 0.75rem; color: var(--ivory); }
+.phraseCount { color: var(--gold); font-weight: 600; font-size: 0.78rem; }
+
+.chartWrap { margin-top: 0.5rem; }
+
+.legendRow { display: flex; gap: 1.2rem; margin-top: 0.55rem; flex-wrap: wrap; }
+
+/* Table */
+.tableWrap { overflow-x: auto; }
+.tableHead {
+  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px;
+  padding: 0.5rem 0.8rem;
+  background: var(--bg-elevated); border-radius: var(--radius) var(--radius) 0 0;
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ivory-muted);
+  border-bottom: 1px solid var(--border);
+}
+.tableRow {
+  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px;
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid rgba(191,160,90,0.06);
+  align-items: center; cursor: pointer; transition: var(--transition);
+}
+.tableRow:last-child { border-bottom: none; border-radius: 0 0 var(--radius) var(--radius); }
+.tableRow:hover { background: var(--bg-elevated); }
+
+.chTitle { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; color: var(--ivory); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chPov { font-size: 0.78rem; font-weight: 500; }
+.chNum { font-size: 0.78rem; color: var(--ivory-muted); font-family: var(--font-mono); }
+.chPurpose { font-size: 0.75rem; color: var(--ivory-dim); text-transform: capitalize; }
+.chEmotion { font-size: 0.75rem; color: var(--ivory-dim); }
+.chFlags { font-size: 0.75rem; }
+.chFlags[data-count="0"] { color: var(--ronin); }
+.chFlags:not([data-count="0"]) { color: var(--sev-medium); }
+
+@media (max-width: 700px) {
+  .tableHead, .tableRow { grid-template-columns: 1fr 60px 60px 60px; }
+  .chPurpose, .chEmotion { display: none; }
+}
