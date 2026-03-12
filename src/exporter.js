@@ -29,9 +29,8 @@ export function exportToText(chapters, stats, manuscriptTitle = 'StoryForge-Repo
     const a = ch.analysis || {}
     lines.push(`Words: ${ch.wordCount?.toLocaleString() || 0}`)
     
-    // POV Voice
     if (a.povVoice) {
-      lines.push(`POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch} - ${a.povVoice.notes})`)
+      lines.push(`POV Voice: ${a.povVoice.pov} (Strength: ${a.povVoice.voiceStrength})`)
     } else {
       lines.push(`POV: ${ch.pov || ch.povScore || 'Unknown'}`)
     }
@@ -142,7 +141,7 @@ export function exportToPDF(chapters, stats, manuscriptTitle = 'StoryForge-Repor
     addText(`Words: ${ch.wordCount?.toLocaleString()}`, 9, false, [176, 168, 152])
     
     // Deep Metrics
-    if (a.povVoice) addText(`POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch})`, 9, false, [176, 168, 152])
+    if (a.povVoice) addText(`POV Voice: ${a.povVoice.pov} (Strength: ${a.povVoice.voiceStrength})`, 9, false, [176, 168, 152])
     const ps = a.purpose?.scores
     if (ps) addText(`Primary Purpose: ${a.purpose?.primary || 'None'} (Plot: ${ps.plot} | Rom: ${ps.romance} | WB: ${ps.worldbuilding} | Con: ${ps.conspiracy})`, 9, false, [176, 168, 152])
     addText(`Emotional Movement: ${a.emotional?.label || 'None'}`, 9, false, [176, 168, 152])
@@ -216,7 +215,7 @@ export async function exportToDOCX(chapters, stats, manuscriptTitle = 'StoryForg
             new Paragraph({ text: `Words: ${ch.wordCount?.toLocaleString()}` })
           ]
           
-          if (a.povVoice) children.push(new Paragraph({ text: `POV Voice: ${a.povVoice.character} (Match: ${a.povVoice.structuralMatch})` }))
+          if (a.povVoice) children.push(new Paragraph({ text: `POV Voice: ${a.povVoice.pov} (Strength: ${a.povVoice.voiceStrength})` }))
           
           const ps = a.purpose?.scores
           if (ps) {
