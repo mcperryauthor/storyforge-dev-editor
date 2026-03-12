@@ -87,7 +87,7 @@ export function parseManuscript(rawText) {
 
   const chapterPattern = /^(#{1,3}\s*)?(chapter\s+\d+|prologue|epilogue|\bpart\s+\d+)/i
   const sceneBreak = /^(\*\s*\*\s*\*|---+|#{3,}|~{3,}|\*{3,})$/
-  const povPattern = /^\*{1,2}([A-Z][a-z]+)\*{1,2}$|^POV:\s*([A-Z][a-z]+)|^\[([A-Z][a-z]+)\]/
+  const povPattern = /^\*{0,2}(Elowyn|Killian|Lysander|Ronin)\*{0,2}$|^POV:\s*([A-Z][a-z]+)|^\[([A-Z][a-z]+)\]/i
 
   lines.forEach(line => {
     const trimmed = line.trim()
@@ -135,9 +135,12 @@ export function parseManuscript(rawText) {
 
     const povMatch = trimmed.match(povPattern)
     if (povMatch) {
+      // Index 1 is the direct name match (Elowyn|Killian|Lysander|Ronin), 2 is POV:, 3 is []
       const name = povMatch[1] || povMatch[2] || povMatch[3]
-      if (POV_CHARACTERS.includes(name)) {
-        current.pov = name
+      // Capitalize first letter just in case
+      const properlyCased = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase()
+      if (POV_CHARACTERS.includes(properlyCased)) {
+        current.pov = properlyCased
       }
       return
     }
