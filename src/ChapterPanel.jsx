@@ -15,6 +15,7 @@ const SECTION_LABELS = {
   prose: '✏️ Prose Patterns',
   outOfPlace: '⚠️ Out-of-Place Prose',
   pacing: '📊 Pacing',
+  aiPatterns: '🤖 AI Patterns',
 }
 
 export default function ChapterPanel({ chapter, onUpdateNotes, onUpdateStatus }) {
@@ -64,6 +65,7 @@ export default function ChapterPanel({ chapter, onUpdateNotes, onUpdateStatus })
         {activeSection === 'prose' && <ProseSection issues={a.prose} />}
         {activeSection === 'outOfPlace' && <OutOfPlaceSection items={a.outOfPlace} />}
         {activeSection === 'pacing' && <PacingSection data={a.pacing} />}
+        {activeSection === 'aiPatterns' && <AIPatternsSection items={a.aiPatterns} />}
       </div>
 
       {/* Notes */}
@@ -241,6 +243,34 @@ function OutOfPlaceSection({ items }) {
           <p className={styles.flagReason}>{item.reason}</p>
         </div>
       ))}
+    </div>
+  )
+}
+
+function AIPatternsSection({ items }) {
+  if (!items?.length) return <div className={styles.empty}>No structural patterns associated with AI detected. ✓</div>
+  
+  return (
+    <div className={styles.subSection}>
+      <div className={styles.infoNote}>
+        <strong>Note:</strong> These findings match structural patterns often found in AI-generated prose. Review for repetition or over-structuring to ensure the prose remains sharp.
+      </div>
+      {items.map((item, i) => {
+        const confClass = item.confidence === 'High' ? styles.highConf : item.confidence === 'Moderate' ? styles.modConf : styles.lowConf
+        return (
+          <div key={i} className={styles.aiPatternItem}>
+            <div className={styles.aiPatternHeader}>
+              <span className={`${styles.pill} ${confClass}`}>{item.confidence} Confidence</span>
+              <span className={styles.aiRuleTitle}>{item.ruleId}</span>
+            </div>
+            <blockquote className={styles.flaggedSentence}>"{item.text}"</blockquote>
+            {item.context && item.context !== item.text && (
+              <p className={styles.aiContext}><em>Context:</em> "...{item.context}..."</p>
+            )}
+            <p className={styles.aiReason}>{item.explanation}</p>
+          </div>
+        )
+      })}
     </div>
   )
 }

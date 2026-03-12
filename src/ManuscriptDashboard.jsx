@@ -36,8 +36,8 @@ export default function ManuscriptDashboard({ chapters, stats, onChapterSelect }
       <div className={styles.statRow}>
         <StatCard value={stats.totalWords.toLocaleString()} label="Total Words" color="var(--gold)" />
         <StatCard value={stats.totalChapters} label="Chapters" color="var(--plum-light)" />
-        <StatCard value={stats.totalScenes} label="Scenes" color="var(--lysander)" />
         <StatCard value={stats.allIssues.length} label="Prose Flags" color="var(--sev-medium)" />
+        <StatCard value={stats.aiDensityLabel} label="AI Pattern Density" color={stats.aiDensityLabel === 'High' ? 'var(--sev-high)' : stats.aiDensityLabel === 'Moderate' ? 'var(--sev-medium)' : 'var(--sev-low)'} />
       </div>
 
       {/* POV distribution */}
@@ -161,6 +161,49 @@ export default function ManuscriptDashboard({ chapters, stats, onChapterSelect }
         </div>
       </div>
 
+      {/* AI Pattern Heatmap / Repetition */}
+      <div className={styles.gridRow}>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>AI Structural Pattern Frequency</div>
+          <div className={styles.phraseList}>
+            {stats.aiPatternCounts?.slice(0,6).map(([rule, count]) => (
+              <div key={rule} className={styles.phraseRow}>
+                <span className={styles.aiRuleLabel}>{rule.replace('Rule ', 'R')}</span>
+                <div className={styles.povBarWrap}>
+                  <div className={styles.povBarFill} style={{ width: `${Math.min(100, count * 10)}%`, background: 'var(--sev-medium)' }} />
+                </div>
+                <span className={styles.phraseCount} style={{ minWidth: '30px', textAlign: 'right' }}>{count}</span>
+              </div>
+            ))}
+            {(!stats.aiPatternCounts || stats.aiPatternCounts.length === 0) && (
+              <div className={styles.cardNote}>No structural AI patterns detected.</div>
+            )}
+          </div>
+          <p className={styles.cardNote}>Frequency of detected structural repetition associated with AI-generated prose.</p>
+        </div>
+        
+        {/* Heatmap-style representation of AI Pattern Density by Chapter */}
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>AI Pattern Heatmap</div>
+          <div className={styles.heatmapGrid}>
+            {chapters.map(ch => {
+              const aiCount = ch.analysis?.aiPatterns?.length || 0;
+              const intensity = aiCount > 5 ? 'high' : aiCount > 2 ? 'medium' : aiCount > 0 ? 'low' : 'none';
+              return (
+                <div 
+                  key={ch.index} 
+                  className={`${styles.heatmapCell} ${styles['heatmap-' + intensity]}`}
+                  title={`${ch.title}: ${aiCount} flags`}
+                  onClick={() => onChapterSelect(ch.index)}
+                >
+                  <span className={styles.heatmapLabel}>{ch.index}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Chapter table */}
       <div className={styles.card}>
         <div className={styles.cardTitle}>Chapter Overview</div>
@@ -171,13 +214,16 @@ export default function ManuscriptDashboard({ chapters, stats, onChapterSelect }
             <span>Words</span>
             <span>Purpose</span>
             <span>Emotion</span>
-            <span>Flags</span>
+            <span>AI Flags</span>
+            <span>Prose Flags</span>
           </div>
           {chapters.map(ch => {
             const a = ch.analysis || {}
             const pov = ch.pov || ch.povScore
             const flags = (a.prose?.length || 0) + (a.outOfPlace?.length || 0) +
               (a.purpose?.flags?.length || 0) + (a.emotional?.flags?.length || 0)
+            const aiFlags = a.aiPatterns?.length || 0
+            
             return (
               <div key={ch.index} className={styles.tableRow}
                 onClick={() => onChapterSelect(ch.index)}
@@ -191,6 +237,9 @@ export default function ManuscriptDashboard({ chapters, stats, onChapterSelect }
                 <span className={styles.chNum}>{(ch.wordCount || 0).toLocaleString()}</span>
                 <span className={styles.chPurpose}>{a.purpose?.primary || '—'}</span>
                 <span className={styles.chEmotion}>{a.emotional?.label || '—'}</span>
+                <span className={styles.chFlags} data-count={aiFlags} style={{ color: aiFlags > 0 ? 'var(--sev-medium)' : 'var(--ivory-muted)'}}>
+                  {aiFlags > 0 ? `${aiFlags}` : '✓'}
+                </span>
                 <span className={styles.chFlags} data-count={flags}>
                   {flags > 0 ? `${flags} flags` : '✓'}
                 </span>

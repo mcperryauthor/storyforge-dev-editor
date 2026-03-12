@@ -86,8 +86,8 @@ export function parseManuscript(rawText) {
   let chapterIndex = 0
 
   const chapterPattern = /^(#{1,3}\s*)?(chapter\s+\d+|prologue|epilogue|\bpart\s+\d+)/i
-  const sceneBreak = /^(\*\s*\*\s*\*|---+|#{3,}|~{3,})$/
-  const povPattern = /^\*{1,2}([A-Z][a-z]+)\*{1,2}$|^POV:\s*([A-Z][a-z]+)|^\[([A-Z][a-z]+)\]$/
+  const sceneBreak = /^(\*\s*\*\s*\*|---+|#{3,}|~{3,}|\*{3,})$/
+  const povPattern = /^\*{1,2}([A-Z][a-z]+)\*{1,2}$|^POV:\s*([A-Z][a-z]+)|^\[([A-Z][a-z]+)\]/
 
   lines.forEach(line => {
     const trimmed = line.trim()
@@ -555,6 +555,8 @@ export function analyzePacing(chapter) {
   return { dialogueRatio, actionPct, introspectPct, expositionPct, rhythm, flags }
 }
 
+import { scanAIPatterns, scanManuscriptAIPatterns } from './aiPatternScanner'
+
 // ─── MASTER ANALYSIS ──────────────────────────────────────────────────────────
 
 export function analyzeManuscript(chapters, settings = {}) {
@@ -569,6 +571,7 @@ export function analyzeManuscript(chapters, settings = {}) {
       prose:      scanProsePatterns(chapter, settings.sensitivity ?? 3),
       outOfPlace: detectOutOfPlaceProse(chapter),
       pacing:     analyzePacing(chapter),
+      aiPatterns: scanAIPatterns(chapter),
     },
   }))
   
@@ -576,6 +579,18 @@ export function analyzeManuscript(chapters, settings = {}) {
   analyzed = analyzed.map(chapter => {
     chapter.analysis.povVoice = analyzePOVVoice(chapter, analyzed)
     return chapter
+  })
+  
+  // Third pass: Cross-chapter AI patterns like repeated concepts and themes
+  const crossChapterFlags = scanManuscriptAIPatterns(analyzed)
+  crossChapterFlags.forEach(flag => {
+    // Distribute these flags back to the chapters where they occur
+    analyzed.forEach(ch => {
+      // Very crude way to map back the cross-chapter flag string match
+      if (ch.rawText.toLowerCase().replace(/[^\w\s]/g, '').includes(flag.text)) {
+        ch.analysis.aiPatterns.push(flag)
+      }
+    })
   })
   
   return analyzed
@@ -619,6 +634,20 @@ export function buildManuscriptStats(analyzedChapters) {
     })
   })
 
+  const allAIPatterns = analyzedChapters.flatMap(c => (c.analysis?.aiPatterns || []).map(i => ({
+    ...i, chapter: c.title, chapterIndex: c.index,
+  })))
+  
+  const aiDensityScore = allAIPatterns.length / (totalWords / 1000)
+  let aiDensityLabel = 'Low'
+  if (aiDensityScore > 1.5) aiDensityLabel = 'High'
+  else if (aiDensityScore > 0.5) aiDensityLabel = 'Moderate'
+  
+  const aiPatternCounts = {}
+  allAIPatterns.forEach(p => {
+    aiPatternCounts[p.ruleId] = (aiPatternCounts[p.ruleId] || 0) + 1
+  })
+
   return {
     totalWords,
     totalChapters: analyzedChapters.length,
@@ -628,5 +657,9 @@ export function buildManuscriptStats(analyzedChapters) {
     conspiracyByChapter,
     allIssues,
     topPhrases: Object.entries(topPhrases).sort((a,b)=>b[1]-a[1]).slice(0,12),
+    allAIPatterns,
+    aiDensityLabel,
+    aiPatternCounts: Object.entries(aiPatternCounts).sort((a,b)=>b[1]-a[1])
   }
 }
+

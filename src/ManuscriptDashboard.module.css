@@ -44,14 +44,14 @@
 /* Table */
 .tableWrap { overflow-x: auto; }
 .tableHead {
-  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px;
+  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px 85px;
   padding: 0.5rem 0.8rem;
   background: var(--bg-elevated); border-radius: var(--radius) var(--radius) 0 0;
   font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ivory-muted);
   border-bottom: 1px solid var(--border);
 }
 .tableRow {
-  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px;
+  display: grid; grid-template-columns: 2fr 80px 80px 100px 90px 70px 85px;
   padding: 0.65rem 0.8rem;
   border-bottom: 1px solid rgba(191,160,90,0.06);
   align-items: center; cursor: pointer; transition: var(--transition);
@@ -69,6 +69,35 @@
 .chFlags:not([data-count="0"]) { color: var(--sev-medium); }
 
 @media (max-width: 700px) {
-  .tableHead, .tableRow { grid-template-columns: 1fr 60px 60px 60px; }
+  .tableHead, .tableRow { grid-template-columns: 1fr 60px 60px 60px 60px; }
   .chPurpose, .chEmotion { display: none; }
 }
+
+/* AI Structural Pattern Elements */
+.phraseList { display: flex; flex-direction: column; gap: 0.55rem; }
+.aiRuleLabel { font-size: 0.78rem; font-weight: 500; min-width: 130px; color: var(--ivory-dim); }
+
+.heatmapGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.heatmapCell {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s;
+}
+.heatmapCell:hover { transform: scale(1.1); box-shadow: 0 0 8px rgba(0,0,0,0.5); }
+.heatmapLabel { font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono); color: rgba(255,255,255,0.8); }
+
+.heatmap-none { background: var(--bg-elevated); }
+.heatmap-low { background: #7aaae0; border-color: #4f7ec2; }
+.heatmap-medium { background: #dba068; border-color: #c9874c; }
+.heatmap-high { background: #e07070; border-color: #c24f4f; }
